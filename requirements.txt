@@ -1,0 +1,6 @@
+flask
+flask-cors
+requests
+textblob
+python-dotenv
+schedule
