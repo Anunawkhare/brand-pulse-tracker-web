@@ -3,86 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BrandPulse Tracker</title>
-    <!-- Load Chart.js for graphs -->
+    <title>BrandPulse Tracker - Live Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Load Tailwind CSS for easy styling -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        positive: '#10B981',
+                        negative: '#EF4444',
+                        neutral: '#6B7280'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .mention-card {
+            transition: all 0.3s ease;
+        }
+        .mention-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
 </head>
-<body class="bg-gray-100 p-8">
-    <div class="container mx-auto">
-        <h1 class="text-3xl font-bold text-center mb-8">BrandPulse Tracker</h1>
+<body class="gradient-bg min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-2">
+                <i class="fas fa-chart-line mr-3"></i>BrandPulse Tracker
+            </h1>
+            <p class="text-xl opacity-90">Real-time Brand Monitoring & Sentiment Analysis Dashboard</p>
+            <div class="flex justify-center items-center mt-4 space-x-4">
+                <div class="flex items-center">
+                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2 pulse"></div>
+                    <span class="text-sm">Live Data</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-newspaper mr-2"></i>
+                    <span class="text-sm">NewsAPI Connected</span>
+                </div>
+            </div>
+        </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" id="stats-container">
-            <!-- Stats will be loaded here by JavaScript -->
-        </div>
-
-        <!-- Chart -->
-        <div class="bg-white p-4 rounded shadow mb-8">
-            <canvas id="sentimentChart"></canvas>
-        </div>
-
-        <!-- Mentions List -->
-        <div class="bg-white p-4 rounded shadow">
-            <h2 class="text-xl font-semibold mb-4">Recent Mentions</h2>
-            <div id="mentions-container">
-                <!-- Mentions will be loaded here by JavaScript -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="stats-container">
+            <div class="stat-card rounded-xl p-6 text-center">
+                <i class="fas fa-bullhorn text-3xl mb-3"></i>
+                <h3 class="text-lg font-semibold mb-2">Total Mentions</h3>
+                <div class="text-3xl font-bold" id="total-mentions">0</div>
             </div>
+            <div class="stat-card rounded-xl p-6 text-center">
+                <i class="fas fa-smile text-3xl mb-3 text-positive"></i>
+                <h3 class="text-lg font-semibold mb-2">Positive</h3>
+                <div class="text-3xl font-bold text-positive" id="positive-mentions">0</div>
+            </div>
+            <div class="stat-card rounded-xl p-6 text-center">
+                <i class="fas fa-frown text-3xl mb-3 text-negative"></i>
+                <h3 class="text-lg font-semibold mb-2">Negative</h3>
+                <div class="text-3xl font-bold text-negative" id="negative-mentions">0</div>
+            </div>
+            <div class="stat-card rounded-xl p-6 text-center">
+                <i class="fas fa-meh text-3xl mb-3 text-neutral"></i>
+                <h3 class="text-lg font-semibold mb-2">Neutral</h3>
+                <div class="text-3xl font-bold text-neutral" id="neutral-mentions">0</div>
+            </div>
+        </div>
+
+        <!-- Charts and Mentions -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Chart -->
+            <div class="stat-card rounded-xl p-6">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-chart-pie mr-3"></i>Sentiment Distribution
+                </h2>
+                <div class="h-80">
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Mentions -->
+            <div class="stat-card rounded-xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold flex items-center">
+                        <i class="fas fa-list mr-3"></i>Recent Mentions
+                    </h2>
+                    <button onclick="fetchData()" class="bg-primary hover:bg-blue-700 px-4 py-2 rounded-lg transition">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="h-80 overflow-y-auto" id="mentions-container">
+                    <div class="text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Loading mentions...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Source Breakdown -->
+        <div class="stat-card rounded-xl p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-database mr-3"></i>Data Sources
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="sources-container">
+                <!-- Sources will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Last Updated -->
+        <div class="text-center text-sm opacity-75 mt-8">
+            <p id="last-updated">Last updated: Loading...</p>
+            <p class="mt-2">Auto-refreshing every 30 seconds</p>
         </div>
     </div>
 
     <script>
-        // Function to fetch data from the Flask backend
+        let sentimentChart = null;
+
+        // Function to fetch data from API
         async function fetchData() {
             try {
-                // Fetch mentions and stats from the API
                 const [mentionsResponse, statsResponse] = await Promise.all([
-                    fetch('http://localhost:5000/api/mentions'),
-                    fetch('http://localhost:5000/api/stats')
+                    fetch('/api/mentions'),
+                    fetch('/api/stats')
                 ]);
 
                 const mentions = await mentionsResponse.json();
                 const stats = await statsResponse.json();
 
-                // Update the UI with the new data
                 updateStats(stats);
                 updateChart(stats);
                 updateMentionsList(mentions);
+                updateSources(stats);
+                updateLastUpdated();
+
             } catch (error) {
                 console.error('Error fetching data:', error);
+                document.getElementById('mentions-container').innerHTML = `
+                    <div class="text-center py-8 text-red-300">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>Error loading data. Please try again.</p>
+                    </div>
+                `;
             }
         }
 
-        // Function to update the stats cards
+        // Update stats cards
         function updateStats(stats) {
-            const statsContainer = document.getElementById('stats-container');
-            statsContainer.innerHTML = `
-                <div class="stat-card bg-blue-100 p-4 rounded">
-                    <h3 class="font-bold">Total Mentions</h3>
-                    <p class="text-2xl">${stats.total_mentions}</p>
-                </div>
-                <div class="stat-card bg-green-100 p-4 rounded">
-                    <h3 class="font-bold">Positive</h3>
-                    <p class="text-2xl">${stats.positive_mentions}</p>
-                </div>
-                <div class="stat-card bg-red-100 p-4 rounded">
-                    <h3 class="font-bold">Negative</h3>
-                    <p class="text-2xl">${stats.negative_mentions}</p>
-                </div>
-                <div class="stat-card bg-gray-100 p-4 rounded">
-                    <h3 class="font-bold">Neutral</h3>
-                    <p class="text-2xl">${stats.neutral_mentions}</p>
-                </div>
-            `;
+            document.getElementById('total-mentions').textContent = stats.total_mentions;
+            document.getElementById('positive-mentions').textContent = stats.positive_mentions;
+            document.getElementById('negative-mentions').textContent = stats.negative_mentions;
+            document.getElementById('neutral-mentions').textContent = stats.neutral_mentions;
         }
 
-        // Function to update the chart
-        let sentimentChart = null;
+        // Update sentiment chart
         function updateChart(stats) {
             const ctx = document.getElementById('sentimentChart').getContext('2d');
-            
-            // Destroy the previous chart if it exists
+
             if (sentimentChart) {
                 sentimentChart.destroy();
             }
@@ -94,54 +193,108 @@
                     datasets: [{
                         data: [stats.positive_mentions, stats.negative_mentions, stats.neutral_mentions],
                         backgroundColor: ['#10B981', '#EF4444', '#6B7280'],
+                        borderWidth: 2,
+                        borderColor: 'rgba(255, 255, 255, 0.1)'
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        title: {
-                            display: true,
-                            text: 'Mentions by Sentiment'
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: 'white',
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)'
                         }
                     }
                 }
             });
         }
 
-        // Function to update the mentions list
+        // Update mentions list
         function updateMentionsList(mentions) {
             const container = document.getElementById('mentions-container');
-            container.innerHTML = mentions.slice(0, 20).map(mention => `
-                <div class="mention-item border-b py-3">
-                    <div class="flex justify-between">
-                        <span class="font-medium">${mention.source}</span>
-                        <span class="sentiment-badge ${getSentimentColor(mention.sentiment)} px-2 py-1 rounded-full text-xs">
+
+            if (mentions.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-inbox text-2xl mb-2"></i>
+                        <p>No mentions found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = mentions.slice(0, 10).map(mention => `
+                <div class="mention-card bg-white bg-opacity-10 rounded-lg p-4 mb-3 border border-white border-opacity-20">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            mention.source === 'news' ? 'bg-blue-500 text-white' :
+                            mention.source === 'demo' ? 'bg-purple-500 text-white' : 'bg-gray-500 text-white'
+                        }">
+                            ${mention.source.toUpperCase()}
+                        </span>
+                        <span class="sentiment-badge px-2 py-1 rounded-full text-xs font-medium ${
+                            mention.sentiment === 'positive' ? 'bg-green-500 text-white' :
+                            mention.sentiment === 'negative' ? 'bg-red-500 text-white' :
+                            'bg-gray-500 text-white'
+                        }">
                             ${mention.sentiment}
                         </span>
                     </div>
-                    <p class="my-2">${mention.text}</p>
-                    <div class="flex justify-between text-sm text-gray-600">
-                        <a href="${mention.url}" target="_blank" class="text-blue-500 hover:underline">View Source</a>
-                        <span>${new Date(mention.timestamp).toLocaleString()}</span>
+                    <p class="text-sm mb-2 line-clamp-2">${mention.text}</p>
+                    <div class="flex justify-between items-center text-xs opacity-75">
+                        <a href="${mention.url}" target="_blank" class="text-blue-300 hover:text-blue-100 transition">
+                            <i class="fas fa-external-link-alt mr-1"></i>View Source
+                        </a>
+                        <span>${new Date(mention.timestamp).toLocaleTimeString()}</span>
                     </div>
                 </div>
             `).join('');
         }
 
-        // Helper function to get color based on sentiment
-        function getSentimentColor(sentiment) {
-            switch(sentiment) {
-                case 'positive': return 'bg-green-200 text-green-800';
-                case 'negative': return 'bg-red-200 text-red-800';
-                default: return 'bg-gray-200 text-gray-800';
-            }
+        // Update sources breakdown
+        function updateSources(stats) {
+            const container = document.getElementById('sources-container');
+            const sources = stats.source_breakdown;
+
+            container.innerHTML = `
+                <div class="text-center p-4 bg-blue-500 bg-opacity-20 rounded-lg">
+                    <i class="fas fa-newspaper text-2xl mb-2"></i>
+                    <h3 class="font-semibold">News Articles</h3>
+                    <div class="text-2xl font-bold mt-2">${sources.news || 0}</div>
+                </div>
+                <div class="text-center p-4 bg-purple-500 bg-opacity-20 rounded-lg">
+                    <i class="fas fa-database text-2xl mb-2"></i>
+                    <h3 class="font-semibold">Demo Data</h3>
+                    <div class="text-2xl font-bold mt-2">${sources.demo || 0}</div>
+                </div>
+                <div class="text-center p-4 bg-green-500 bg-opacity-20 rounded-lg">
+                    <i class="fas fa-check-circle text-2xl mb-2"></i>
+                    <h3 class="font-semibold">Total Sources</h3>
+                    <div class="text-2xl font-bold mt-2">${(sources.news || 0) + (sources.demo || 0)}</div>
+                </div>
+            `;
         }
 
-        // Load data when the page loads and set up periodic refreshes
+        // Update last updated time
+        function updateLastUpdated() {
+            const now = new Date();
+            document.getElementById('last-updated').textContent =
+                `Last updated: ${now.toLocaleTimeString()}`;
+        }
+
+        // Load data when page loads and set up periodic refresh
         document.addEventListener('DOMContentLoaded', function() {
             fetchData();
-            // Refresh data every 30 seconds
-            setInterval(fetchData, 30000);
+            setInterval(fetchData, 30000); // Refresh every 30 seconds
         });
     </script>
 </body>
